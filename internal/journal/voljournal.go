@@ -282,9 +282,7 @@ func (conn *Connection) CheckReservation(ctx context.Context,
 		ctx, conn, journalPool, cj.namespace, cj.csiDirectory,
 		cj.commonPrefix, fetchKeys)
 	if err != nil {
-		var eknf util.ErrKeyNotFound
-		var epnf util.ErrPoolNotFound
-		if errors.As(err, &eknf) || errors.As(err, &epnf) {
+		if errors.Is(err, util.ErrKeyNotFound) || errors.Is(err, util.ErrPoolNotFound) {
 			// pool or omap (oid) was not present
 			// stop processing but without an error for no reservation exists
 			return nil, nil
@@ -316,8 +314,7 @@ func (conn *Connection) CheckReservation(ctx context.Context,
 
 		savedImagePool, err = util.GetPoolName(conn.monitors, conn.cr, savedImagePoolID)
 		if err != nil {
-			var epnf util.ErrPoolNotFound
-			if errors.As(err, &epnf) {
+			if errors.Is(err, util.ErrPoolNotFound) {
 				err = conn.UndoReservation(ctx, journalPool, "", "", reqName)
 			}
 			return nil, err
@@ -329,8 +326,7 @@ func (conn *Connection) CheckReservation(ctx context.Context,
 	if err != nil {
 		// error should specifically be not found, for image to be absent, any other error
 		// is not conclusive, and we should not proceed
-		var eknf util.ErrKeyNotFound
-		if errors.As(err, &eknf) {
+		if errors.Is(err, util.ErrKeyNotFound) {
 			err = conn.UndoReservation(ctx, journalPool, savedImagePool,
 				cj.GetNameForUUID(namePrefix, objUUID, snapSource), reqName)
 		}
@@ -366,7 +362,7 @@ func (conn *Connection) CheckReservation(ctx context.Context,
 			err = fmt.Errorf("snapname points to different volume, request name (%s)"+
 				" source name (%s) saved source name (%s)",
 				reqName, parentName, savedImageAttributes.SourceName)
-			return nil, util.NewErrSnapNameConflict(err)
+			return nil, util.ErrSnapNameConflict.Wrap(err)
 		}
 	}
 
@@ -412,8 +408,7 @@ func (conn *Connection) UndoReservation(ctx context.Context,
 
 		err := util.RemoveObject(ctx, conn.monitors, conn.cr, volJournalPool, cj.namespace, cj.cephUUIDDirectoryPrefix+imageUUID)
 		if err != nil {
-			var eonf util.ErrObjectNotFound
-			if !errors.As(err, &eonf) {
+			if !errors.Is(err, util.ErrObjectNotFound) {
 				klog.Errorf(util.Log(ctx, "failed removing oMap %s (%s)"), cj.cephUUIDDirectoryPrefix+imageUUID, err)
 				return err
 			}
@@ -445,8 +440,7 @@ func reserveOMapName(ctx context.Context, monitors string, cr *util.Credentials,
 
 		err := util.CreateObject(ctx, monitors, cr, pool, namespace, oMapNamePrefix+iterUUID)
 		if err != nil {
-			var eoe util.ErrObjectExists
-			if errors.As(err, &eoe) {
+			if errors.Is(err, util.ErrObjectExists) {
 				attempt++
 				// try again with a different uuid, for maxAttempts tries
 				klog.V(4).Infof(util.Log(ctx, "uuid (%s) conflict detected, retrying (attempt %d of %d)"),
@@ -616,9 +610,7 @@ func (conn *Connection) GetImageAttributes(ctx context.Context, pool, objectUUID
 		ctx, conn, pool, cj.namespace, cj.cephUUIDDirectoryPrefix+objectUUID,
 		cj.commonPrefix, fetchKeys)
 	if err != nil {
-		var eknf util.ErrKeyNotFound
-		var epnf util.ErrPoolNotFound
-		if !errors.As(err, &eknf) && !errors.As(err, &epnf) {
+		if !errors.Is(err, util.ErrKeyNotFound) && !errors.Is(err, util.ErrPoolNotFound) {
 			return nil, err
 		}
 		klog.Warningf(util.Log(ctx, "unable to read omap keys: pool or key missing: %v"), err)
@@ -656,7 +648,7 @@ func (conn *Connection) GetImageAttributes(ctx context.Context, pool, objectUUID
 	if snapSource {
 		imageAttributes.SourceName, found = values[cj.cephSnapSourceKey]
 		if !found {
-			return nil, util.NewErrKeyNotFound(
+			return nil, util.ErrKeyNotFound.Wrap(
 				fmt.Errorf("no snap source in omap for %q", cj.cephUUIDDirectoryPrefix+objectUUID))
 		}
 	}
