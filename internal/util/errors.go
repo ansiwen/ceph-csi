@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Ceph-CSI Authors.
+Copyright 2020 The Ceph-CSI Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,93 +16,18 @@ limitations under the License.
 
 package util
 
-// ErrKeyNotFound is returned when requested key in omap is not found
-type ErrKeyNotFound struct {
-	err error
-}
+import "github.com/ceph/ceph-csi/internal/sentinel"
 
-// NewErrKeyNotFound returns a new ErrKeyNotFound error.
-func NewErrKeyNotFound(err error) ErrKeyNotFound {
-	return ErrKeyNotFound{err}
-}
-
-// Error returns the error string for ErrKeyNotFound.
-func (e ErrKeyNotFound) Error() string {
-	return e.err.Error()
-}
-
-// Unwrap returns the encapsulated error.
-func (e ErrKeyNotFound) Unwrap() error {
-	return e.err
-}
-
-// ErrObjectExists is returned when named omap is already present in rados
-type ErrObjectExists struct {
-	err error
-}
-
-// Error returns the error string for ErrObjectExists.
-func (e ErrObjectExists) Error() string {
-	return e.err.Error()
-}
-
-// Unwrap returns the encapsulated error.
-func (e ErrObjectExists) Unwrap() error {
-	return e.err
-}
-
-// ErrObjectNotFound is returned when named omap is not found in rados
-type ErrObjectNotFound struct {
-	err error
-}
-
-// Error returns the error string for ErrObjectNotFound.
-func (e ErrObjectNotFound) Error() string {
-	return e.err.Error()
-}
-
-// Unwrap returns the encapsulated error.
-func (e ErrObjectNotFound) Unwrap() error {
-	return e.err
-}
-
-// ErrSnapNameConflict is generated when a requested CSI snap name already exists on RBD but with
-// different properties, and hence is in conflict with the passed in CSI volume name
-type ErrSnapNameConflict struct {
-	err error
-}
-
-// Error returns the error string for ErrSnapNameConflict.
-func (e ErrSnapNameConflict) Error() string {
-	return e.err.Error()
-}
-
-// Unwrap returns the encapsulated error.
-func (e ErrSnapNameConflict) Unwrap() error {
-	return e.err
-}
-
-// NewErrSnapNameConflict returns a ErrSnapNameConflict error when CSI snap name already exists.
-func NewErrSnapNameConflict(err error) ErrSnapNameConflict {
-	return ErrSnapNameConflict{err}
-}
-
-// ErrPoolNotFound is returned when pool is not found
-type ErrPoolNotFound struct {
-	Err error
-}
-
-// Error returns the error string for ErrPoolNotFound.
-func (e ErrPoolNotFound) Error() string {
-	return e.Err.Error()
-}
-
-// Unwrap returns the encapsulated error.
-func (e ErrPoolNotFound) Unwrap() error {
-	return e.Err
-}
-
-// NewErrPoolNotFound returns a new ErrPoolNotFound error.
-func NewErrPoolNotFound(err error) ErrPoolNotFound {
-	return ErrPoolNotFound{err}
-}
+var (
+	// ErrKeyNotFound is returned when requested key in omap is not found
+	ErrKeyNotFound = sentinel.New("Key not found")
+	// ErrObjectExists is returned when named omap is already present in rados
+	ErrObjectExists = sentinel.New("Object exists")
+	// ErrObjectNotFound is returned when named omap is not found in rados
+	ErrObjectNotFound = sentinel.New("Object not found")
+	// ErrSnapNameConflict is generated when a requested CSI snap name already exists on RBD but with
+	// different properties, and hence is in conflict with the passed in CSI volume name
+	ErrSnapNameConflict = sentinel.New("Snapshot name conflict")
+	// ErrPoolNotFound is returned when pool is not found
+	ErrPoolNotFound = sentinel.New("Pool not found")
+)
